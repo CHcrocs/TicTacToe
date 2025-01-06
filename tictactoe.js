@@ -16,11 +16,10 @@ const Gameboard = (() => {
     }
 
     return {getBoard, resetBoard, setCell};
-})
+})();
 
 const Player = (name, marker) => {
-    this.name = name;
-    this.marker = marker;
+    return {name, marker};
 }
 
 const GameController = (() => {
@@ -37,7 +36,7 @@ const GameController = (() => {
         const board = Gameboard.getBoard();
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows 
-            [0, 3, 6], [1, 4, 5], [2, 5, 8], //Columns
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], //Columns
             [0, 4, 8], [2, 4, 6] // Diagonals
         ];
         
@@ -56,4 +55,66 @@ const GameController = (() => {
         
         return null;
     }
-});
+
+    const playTurn = (index) => {
+        const board = Gameboard.getBoard();
+        if (board[index]) return;
+        if (isGameOver) return;
+
+        Gameboard.setCell(index, currentPlayer.marker);
+        DisplayController.updateBoard(index, currentPlayer.marker);
+
+        if (checkWinner()) {
+            console.log(`${currentPlayer.name} wins!`);
+        }
+        
+        const result = checkWinner();
+        if (result) {
+            DisplayController.displayWinner(result);
+        } else {
+            switchPlayer();
+            DisplayController.updateMessage(`${currentPlayer.name}'s Turn`);
+        }
+        
+    }
+
+    const resetGame = () => {
+        Gameboard.resetBoard();
+        currentPlayer = player1;
+        isGameOver = false;
+        DisplayController.resetDisplay();
+        DisplayController.updateMessage(`${currentPlayer.name}'s Turn`);
+    }
+    
+    return {playTurn, resetGame };
+})();
+
+const DisplayController = (() => {
+    const cells = document.querySelectorAll(".cell")
+    const message = document.querySelector("#message")
+    const resetButton = document.querySelector("#reset")
+
+    cells.forEach((cell, index) => {
+        cell.addEventListener("click", () => GameController.playTurn(index));
+    });
+
+    resetButton.addEventListener("click", () => GameController.resetGame());
+
+    const displayWinner = (winner) => {
+        message.textContent = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
+    };
+
+    const updateMessage = (msg) => {
+        message.textContent = msg;
+    };
+
+    const resetDisplay = () => {
+        cells.forEach(cell => (cell.textContent = ""));
+    };
+
+    const updateBoard = (index, marker) => {
+        cells[index].textContent = marker;
+    };
+
+    return { displayWinner, updateMessage, resetDisplay, updateBoard };
+})();
